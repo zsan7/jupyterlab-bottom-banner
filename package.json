@@ -15,11 +15,9 @@
   "author": "Zsan7", 
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
-    "style/**/*.{css,eot,gif,html,jpg,png,svg,woff2,ttf}"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "style": "style/index.css",
   "repository": {
     "type": "git",
     "url": "https://github.com/zsan7/jupyterlab-bottom-banner.git" 
@@ -58,11 +56,7 @@
     "rimraf": "^5.0.0",
     "typescript": "~5.1.6"
   },
-  "sideEffects": [
-    "style/*.css",
-    "style/index.js"
-  ],
-  "styleModule": "style/index.js",
+  "sideEffects": false,
   "jupyterlab": {
     "extension": true,
     "outputDir": "jupyterlab_bottom_banner/labextension"
