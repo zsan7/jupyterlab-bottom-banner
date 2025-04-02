@@ -3,64 +3,83 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
-import { IStatusBar } from '@jupyterlab/statusbar';
-
-import { Widget } from '@lumino/widgets';
+import { IStatusBar, ReactWidget } from '@jupyterlab/statusbar';
+import React from 'react';
 
 /**
- * Initialization data for the jupyterlab-wom-banner extension.
- * Cambiamos el ID para reflejar mejor el propósito.
+ * Un componente React simple para el contenido del banner.
+ */
+const BannerComponent = (): JSX.Element => {
+  // El div principal ahora usa la clase CSS definida en style/base.css
+  // Ya no necesita 'position: fixed' porque la barra de estado lo maneja.
+  return (
+    <div className="jp-bottom-banner" id="jp-bottom-banner-id">
+      Este es el banner inferior! (vía StatusBar)
+    </div>
+  );
+};
+
+/**
+ * Un Widget de Lumino (usando React) que envuelve nuestro componente de banner.
+ */
+class BannerWidget extends ReactWidget {
+  /**
+   * Construye un nuevo widget de banner.
+   */
+  constructor() {
+    super();
+    // Puedes añadir clases CSS adicionales al propio widget si es necesario
+    this.addClass('jp-BottomBannerWidget');
+  }
+
+  /**
+   * Renderiza el componente BannerComponent dentro de este widget.
+   */
+  render(): JSX.Element {
+    return <BannerComponent />;
+  }
+}
+
+
+/**
+ * El plugin de extensión de JupyterLab.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'jupyterlab-wom-banner:plugin',
+  id: 'jupyterlab-bottom-banner:plugin',
   autoStart: true,
-  // Solicitamos IStatusBar como una dependencia opcional.
-  // Si la barra de estado no está disponible por alguna razón, la extensión no fallará.
-  optional: [IStatusBar],
-  activate: (app: JupyterFrontEnd, statusBar: IStatusBar | null) => {
-    console.log('JupyterLab extension jupyterlab-wom-banner is activating!');
+  // Ahora requerimos IStatusBar en lugar de (o además de) ILabShell
+  requires: [IStatusBar],
+  activate: (
+    app: JupyterFrontEnd,
+    statusBar: IStatusBar // Recibimos la instancia de IStatusBar
+  ) => {
+    console.log('JupyterLab extension jupyterlab-bottom-banner is activating!');
 
-    // Verifica si la barra de estado está disponible
-    if (!statusBar) {
-      console.warn('StatusBar not available, cannot add WOM banner.');
-      return;
-    }
+    // 1. Crear una instancia de nuestro BannerWidget
+    const widget = new BannerWidget();
 
-    // --- Crear el Widget del Banner para la Barra de Estado ---
-
-    // Crea un widget simple para contener nuestro texto y estilo.
-    const bannerWidget = new Widget();
-    bannerWidget.id = 'wom-performance-banner';
-
-    // Aplica los estilos solicitados
-    bannerWidget.node.style.backgroundColor = '#32174d'; // Russian Violet
-    bannerWidget.node.style.color = 'white';          // Texto blanco
-    bannerWidget.node.style.fontWeight = 'bold';       // Texto en negrita
-    bannerWidget.node.style.padding = '2px 8px';       // Padding interno (vertical, horizontal) para que no esté pegado a los bordes
-    bannerWidget.node.style.fontSize = '11px';         // Un tamaño de fuente adecuado para la barra de estado
-    bannerWidget.node.style.lineHeight = '16px';       // Ajusta la altura de línea para centrar verticalmente si es necesario
-    bannerWidget.node.style.borderRadius = '2px';      // Bordes ligeramente redondeados (opcional, estético)
-    bannerWidget.node.style.marginRight = '4px';       // Un pequeño margen a la derecha para separarlo de otros elementos
-
-    // Establece el texto solicitado
-    bannerWidget.node.textContent = 'WOM | Equipo Performance (Network)';
-
-    // --- Añadir el Widget a la Barra de Estado ---
-
-    // Registra nuestro widget en la barra de estado.
-    // Lo añadimos con alineación 'left' para que aparezca en el lado izquierdo.
-    // El 'rank' determina el orden si hay múltiples elementos a la izquierda (valores bajos van primero).
+    // 2. Registrar el widget en la barra de estado
+    // - El primer argumento es un ID único para este item en la barra de estado.
+    // - `item`: Es la instancia del widget que creamos.
+    // - `align`: 'left', 'right', o 'middle'. Pongámoslo a la izquierda.
+    // - `rank`: Controla el orden relativo a otros items en la misma alineación.
+    //          Rank más bajo va más a la izquierda (en align: 'left').
+    //          Rank más bajo va más a la derecha (en align: 'right').
     statusBar.registerStatusItem(
-      plugin.id + ':wom-status', // Un ID único para este item en la barra de estado
+      'jupyterlab-bottom-banner:status-item', // ID único
       {
-        item: bannerWidget,
-        align: 'left', // Alinea el item a la izquierda de la barra de estado
-        rank: 10,      // Posición relativa a otros items de la izquierda (puedes ajustar esto)
-        isActive: () => true // Siempre activo (puedes hacerlo condicional si lo necesitas)
+        item: widget,
+        align: 'left', // Podría ser 'right' si lo prefieres al otro lado
+        rank: 1000 // Un rank alto en 'left' lo empuja hacia la derecha de esa sección
+                   // Un rank bajo (e.g., 0) lo pondría muy a la izquierda.
+                   // Experimenta para encontrar la posición deseada.
       }
     );
 
-    console.log('WOM banner added to the status bar.');
+    console.log('Banner widget added to the status bar.');
+
+    // Ya no necesitamos añadir nada manualmente a app.shell.node
+    // El código original que hacía app.shell.node.appendChild(banner) se elimina.
   }
 };
 
